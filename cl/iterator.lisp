@@ -71,7 +71,7 @@
     ((function iterator) (function iterator))
     (function iterator)
   (multiple-value-bind (elt validp) (dept:iterator-next iterator)
-    (values (when validp (dept:funcall function elt)) validp)))
+    (values (when validp (funcall function elt)) validp)))
 
 (dept:define-iterator dept:filter-iterator
     ((filter-function iterator) (filter-function iterator))
@@ -79,7 +79,7 @@
   (loop do
     (multiple-value-bind (elt validp) (dept:iterator-next iterator)
       (cond ((and validp
-                  (dept:funcall filter-function elt))
+                  (funcall filter-function elt))
              (return (values elt t)))
             ((not validp)
              (return (values nil nil)))))))
@@ -93,14 +93,13 @@
 
 #|
 
-(defun iterate/iterator (fn l)
+(defun iterate/iterator (fn1 fn2 l)
   (declare (optimize speed)
            (type list l))
   (dept:imlet* ((it1 (dept:list-iterator l))
-                (it2 (dept:filter-iterator 'evenp it1))
-                (it3 (dept:map-iterator fn it2)))
-    (declare (dynamic-extent it1 it2 it3)
-             (optimize (safety 0)))
+                (it2 (dept:filter-iterator fn1 it1))
+                (it3 (dept:map-iterator fn2 it2)))
+    (declare (dynamic-extent it1 it2 it3))
     (let (a)
       (loop do
         (multiple-value-bind (elt validp) (dept:iterator-next it3)
@@ -115,29 +114,6 @@
     (loop :for elt :in l
           :do (when (funcall fn1 elt)
                 (setq a (funcall fn2 elt))))
-    a))
-
-(defun iterate/iterator (fn v)
-  (declare (optimize speed)
-           (type (vector fixnum) v))
-  (dept:imlet* ((it1 (dept:vector-iterator v 0))
-                (it2 (dept:filter-iterator 'evenp it1))
-                (it3 (dept:map-iterator fn it2)))
-    (declare (dynamic-extent it1 it2 it3))
-    (let (a)
-      (loop do
-        (multiple-value-bind (elt validp) (dept:iterator-next it3)
-          (setq a elt)
-          (when (null validp) (return))))
-      a)))
-
-(defun iterate/native (fn v)
-  (declare (optimize speed)
-           (type (vector fixnum) v))
-  (let (a)
-    (loop :for elt :across v
-          :do (when (evenp elt)
-                (setq a (funcall fn elt))))
     a))
 
 |#
